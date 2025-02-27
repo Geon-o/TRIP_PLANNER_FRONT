@@ -104,7 +104,6 @@ const index = () => {
                            isInvalid
                            errorBorderColor={isEmail ? 'none' : 'red.300'}
                            onChange={onChangeEmail}/>
-                    <Text fontSize='10px'>{emailMessage}</Text>
                     <InputRightElement width='3.5rem'>
                         <Button size='sm'
                                 h='1.75rem'
@@ -115,6 +114,7 @@ const index = () => {
                         </Button>
                     </InputRightElement>
                 </InputGroup>
+                <Text fontSize='10px'>{emailMessage}</Text>
 
                 <InputGroup>
                     <Input type="text"
