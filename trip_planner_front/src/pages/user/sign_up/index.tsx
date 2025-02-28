@@ -16,7 +16,9 @@ import {UserDto} from './types/user';
 import * as React from "react";
 
 const index = () => {
-    const [show, setShow] = useState(false);
+    const [showPasswordText, setShowPasswordText] = useState(false);
+    const [showEmailConf, setShowEmailConf] = useState(false);
+    const [showDetailInfo, setShowDetailInfo] = useState(false);
 
     const onSubmit: any = (data: UserDto) => {
         console.log(data);
@@ -24,7 +26,6 @@ const index = () => {
     }
 
     const [value, setValue] = useState('');
-
 
     const [id, setId] = useState('');
     const [email, setEmail] = useState('');
@@ -109,6 +110,7 @@ const index = () => {
                                 h='1.75rem'
                                 variant='outline'
                                 fontSize='12px'
+                                onClick={() => setShowEmailConf(true)}
                         >
                             인증
                         </Button>
@@ -116,47 +118,72 @@ const index = () => {
                 </InputGroup>
                 <Text fontSize='10px'>{emailMessage}</Text>
 
-                <InputGroup>
-                    <Input type="text"
-                           placeholder="아이디"
-                           isInvalid
-                           errorBorderColor={isId ? 'none' : 'red.300'}
-                           onChange={onChangeId}
-                           size='md'
-                    />
-                    <InputRightElement width='4.9rem'>
-                        <Button size='sm'
-                                h='1.75rem'
-                                variant='outline'
-                                fontSize='12px'
-                        >
-                            중복확인
-                        </Button>
-                    </InputRightElement>
-                </InputGroup>
-                <Text fontSize='10px'>{idMessage}</Text>
+                {
+                    showEmailConf &&
+                    <InputGroup>
+                        <Input type="text"
+                               placeholder="인증번호"
+                               />
+                        <InputRightElement width='3.5rem'>
+                            <Text fontSize='10px' h='1.75rem'>6자리</Text>
+                            <Button size='sm'
+                                    h='1.75rem'
+                                    variant='outline'
+                                    fontSize='12px'
+                                    onClick={() => setShowDetailInfo(true)}
+                            >
+                                확인
+                            </Button>
+                        </InputRightElement>
+                    </InputGroup>
+                }
 
-                <InputGroup>
-                    <Input type={show ? 'text' : "password"}
-                           placeholder="비밀번호"
-                           isInvalid
-                           errorBorderColor={isPassword ? 'none' : 'red.300'}
-                           onChange={onChangePassword}/>
+                {
+                    showDetailInfo &&
+                    <Stack>
+                        <InputGroup>
+                            <Input type="text"
+                                   placeholder="아이디"
+                                   isInvalid
+                                   errorBorderColor={isId ? 'none' : 'red.300'}
+                                   onChange={onChangeId}
+                                   size='md'
+                            />
+                            <InputRightElement width='4.9rem'>
+                                <Button size='sm'
+                                        h='1.75rem'
+                                        variant='outline'
+                                        fontSize='12px'
+                                >
+                                    중복확인
+                                </Button>
+                            </InputRightElement>
+                        </InputGroup>
+                        <Text fontSize='10px'>{idMessage}</Text>
 
-                    <InputRightElement width='3rem'>
-                        <IconButton h='1.75rem'
-                                    icon={show ? <FaRegEyeSlash/> : <FaRegEye/>}
-                                    onClick={() => setShow(!show)}/>
-                    </InputRightElement>
-                </InputGroup>
-                <Text fontSize='10px'>{passwordMessage}</Text>
+                        <InputGroup>
+                            <Input type={showPasswordText ? 'text' : "password"}
+                                   placeholder="비밀번호"
+                                   isInvalid
+                                   errorBorderColor={isPassword ? 'none' : 'red.300'}
+                                   onChange={onChangePassword}/>
 
-                <Input type="password"
-                       placeholder="비밀번호 확인"
-                       isInvalid
-                       errorBorderColor={isPasswordCheck ? 'none' : 'red.300'}
-                       onChange={onChangePasswordCheck}/>
-                <Text fontSize='10px'>{passwordCheckMessage}</Text>
+                            <InputRightElement width='3rem'>
+                                <IconButton h='1.75rem'
+                                            icon={showPasswordText ? <FaRegEyeSlash/> : <FaRegEye/>}
+                                            onClick={() => setShowPasswordText(!showPasswordText)}/>
+                            </InputRightElement>
+                        </InputGroup>
+                        <Text fontSize='10px'>{passwordMessage}</Text>
+
+                        <Input type="password"
+                               placeholder="비밀번호 확인"
+                               isInvalid
+                               errorBorderColor={isPasswordCheck ? 'none' : 'red.300'}
+                               onChange={onChangePasswordCheck}/>
+                        <Text fontSize='10px'>{passwordCheckMessage}</Text>
+                    </Stack>
+                }
             </Stack>
 
             <Flex justifyContent='center' mt={10} mb={10}>
