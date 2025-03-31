@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import styles from './index.module.scss';
 import {FaRegEye} from "react-icons/fa";
 import {FaRegEyeSlash} from "react-icons/fa";
@@ -12,13 +12,19 @@ import {
     InputRightElement,
     IconButton
 } from '@chakra-ui/react';
-import {UserDto} from './types/user';
+import {UserDto} from './types/User.tsx';
 import * as React from "react";
+import Timer from "@pages/user/sign_up/utils/Timer.tsx";
 
 const index = () => {
     const [showPasswordText, setShowPasswordText] = useState(false);
     const [showEmailConf, setShowEmailConf] = useState(false);
     const [showDetailInfo, setShowDetailInfo] = useState(false);
+
+    const [disabledEmailConfBtn, setDisabledEmailConfBtn] = useState(true);
+    const [disabledDetailInfoBtn, setDisabledDetailInfoBtn] = useState(true);
+
+    const resetTimerRef = useRef(null);
 
     const onSubmit: any = (data: UserDto) => {
         console.log(data);
@@ -29,29 +35,31 @@ const index = () => {
 
     const [id, setId] = useState('');
     const [email, setEmail] = useState('');
+    const [emailConf, setEmailConf] = useState('');
     const [password, setPassword] = useState('');
     const [passwordCheck, setPasswordCheck] = useState('');
 
     const [idMessage, setIdMessage] = useState('');
     const [emailMessage, setEmailMessage] = useState('');
+    const [emailConfMessage, setEmailConfMessage] = useState('');
     const [passwordMessage, setPasswordMessage] = useState('');
     const [passwordCheckMessage, setPasswordCheckMessage] = useState('');
 
-    const [isId, setIsId] = useState(true);
-    const [isEmail, setIsEmail] = useState(true);
-    const [isPassword, setIsPassword] = useState(true);
-    const [isPasswordCheck, setIsPasswordCheck] = useState(true);
+    const [isId, setIsId] = useState(false);
+    const [isEmail, setIsEmail] = useState(false);
+    const [isEmailConf, setIsEmailConf] = useState(false);
+    const [isPassword, setIsPassword] = useState(false);
+    const [isPasswordCheck, setIsPasswordCheck] = useState(false);
 
     const onChangeId = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setId(e.target.value);
-        console.log(e.target.value);
 
         if (e.target.value.length < 2 || e.target.value.length > 8) {
             setIdMessage('2글자 이상 8글자 미만으로 입력해주세요.');
-            setIsId(false);
+            setIsId(true);
         } else {
             setIdMessage('');
-            setIsId(true);
+            setIsId(false);
         }
     }, []);
 
@@ -61,23 +69,50 @@ const index = () => {
 
         if (!emailRegex.test(e.target.value)) {
             setEmailMessage('올바른 이메일 주소를 입력해주세요.');
-            setIsEmail(false);
+            setDisabledEmailConfBtn(true);
+            setIsEmail(true);
         } else {
             setEmailMessage('');
-            setIsEmail(true);
+            setDisabledEmailConfBtn(false);
+            setIsEmail(false);
         }
+    }, []);
+
+    const onChangeEmailConf = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setEmailConf(e.target.value);
+
+        if (e.target.value.length > 6) {
+            setEmailConfMessage('인증 번호를 확인해주세요');
+            setDisabledDetailInfoBtn(true);
+            return;
+        }
+
+        if (e.target.value.length === 0) {
+            setEmailConfMessage('인증번호를 입력해주세요.');
+            setDisabledDetailInfoBtn(true);
+            return;
+        }
+
+        setEmailConfMessage('');
+        setDisabledDetailInfoBtn(false);
+
     }, []);
 
     const onChangePassword = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const passwordRegex = /^(?=.*[a-zA-Z])(?=.*[!@#$%^*+=-])(?=.*[0-9]).{8,25}$/;
         setPassword(e.target.value);
 
+        if (e.target.value.length === 0) {
+            setIsPasswordCheck(true);
+            setPasswordCheckMessage('비밀번호를 입력해주세요.');
+        }
+
         if (!passwordRegex.test(e.target.value)) {
             setPasswordMessage('숫자, 영문자, 특수문자 조합으로 8자리 이상 입력해주세요.');
-            setIsPassword(false);
+            setIsPassword(true);
         } else {
             setPasswordMessage('');
-            setIsPassword(true);
+            setIsPassword(false);
         }
 
     }, []);
@@ -87,13 +122,25 @@ const index = () => {
 
         if (password === e.target.value) {
             setPasswordCheckMessage('');
-            setIsPasswordCheck(true);
+            setIsPasswordCheck(false);
         } else {
             setPasswordCheckMessage('비밀번호가 일치하지 않습니다 :(');
-            setIsPasswordCheck(false);
+            setIsPasswordCheck(true);
         }
 
     }, [password]);
+
+    const onClickEmailConf = () => {
+        setShowEmailConf(!isEmail);
+        handleReset();
+    }
+
+
+    const handleReset = () => {
+        if (resetTimerRef.current) {
+            resetTimerRef.current();
+        }
+    }
 
     return (
         <div className={styles.container}>
@@ -103,16 +150,17 @@ const index = () => {
                     <Input type="email"
                            placeholder="이메일"
                            isInvalid
-                           errorBorderColor={isEmail ? 'none' : 'red.300'}
+                           errorBorderColor={!isEmail ? 'none' : 'red.300'}
                            onChange={onChangeEmail}/>
-                    <InputRightElement width='3.5rem'>
+                    <InputRightElement width={showEmailConf ? '4.2rem' : '3.5rem'}>
                         <Button size='sm'
                                 h='1.75rem'
                                 variant='outline'
                                 fontSize='12px'
-                                onClick={() => setShowEmailConf(true)}
+                                onClick={onClickEmailConf}
+                                disabled={disabledEmailConfBtn}
                         >
-                            인증
+                            {showEmailConf ? '재인증' : '인증'}
                         </Button>
                     </InputRightElement>
                 </InputGroup>
@@ -120,75 +168,89 @@ const index = () => {
 
                 {
                     showEmailConf &&
-                    <InputGroup>
-                        <Input type="text"
-                               placeholder="인증번호"
-                               />
-                        <InputRightElement width='3.5rem'>
-                            <Text fontSize='10px' h='1.75rem'>6자리</Text>
-                            <Button size='sm'
-                                    h='1.75rem'
-                                    variant='outline'
-                                    fontSize='12px'
-                                    onClick={() => setShowDetailInfo(true)}
-                            >
-                                확인
-                            </Button>
-                        </InputRightElement>
-                    </InputGroup>
-                }
-
-                {
-                    showDetailInfo &&
                     <Stack>
                         <InputGroup>
                             <Input type="text"
-                                   placeholder="아이디"
+                                   placeholder="인증번호"
                                    isInvalid
-                                   errorBorderColor={isId ? 'none' : 'red.300'}
-                                   onChange={onChangeId}
-                                   size='md'
+                                   errorBorderColor={!isEmailConf ? 'none' : 'red.300'}
+                                   onChange={onChangeEmailConf}
                             />
-                            <InputRightElement width='4.9rem'>
+                            <InputRightElement width='8.5rem'>
+                                <Text fontSize='10px' h='1rem'>
+                                    <Timer onReset={(resetFn) => (resetTimerRef.current = resetFn)} />
+                                </Text>
+                            </InputRightElement>
+                            <InputRightElement width='3.5rem'>
                                 <Button size='sm'
                                         h='1.75rem'
                                         variant='outline'
                                         fontSize='12px'
+                                        disabled={disabledDetailInfoBtn}
+                                        onClick={() => setShowDetailInfo(true)}
                                 >
-                                    중복확인
+                                    확인
                                 </Button>
                             </InputRightElement>
                         </InputGroup>
-                        <Text fontSize='10px'>{idMessage}</Text>
-
-                        <InputGroup>
-                            <Input type={showPasswordText ? 'text' : "password"}
-                                   placeholder="비밀번호"
-                                   isInvalid
-                                   errorBorderColor={isPassword ? 'none' : 'red.300'}
-                                   onChange={onChangePassword}/>
-
-                            <InputRightElement width='3rem'>
-                                <IconButton h='1.75rem'
-                                            icon={showPasswordText ? <FaRegEyeSlash/> : <FaRegEye/>}
-                                            onClick={() => setShowPasswordText(!showPasswordText)}/>
-                            </InputRightElement>
-                        </InputGroup>
-                        <Text fontSize='10px'>{passwordMessage}</Text>
-
-                        <Input type="password"
-                               placeholder="비밀번호 확인"
-                               isInvalid
-                               errorBorderColor={isPasswordCheck ? 'none' : 'red.300'}
-                               onChange={onChangePasswordCheck}/>
-                        <Text fontSize='10px'>{passwordCheckMessage}</Text>
+                        <Text fontSize='10px'>{emailConfMessage}</Text>
                     </Stack>
+                }
+
+                {
+                    showDetailInfo &&
+                    <div>
+                        <Stack>
+                            <InputGroup>
+                                <Input type="text"
+                                       placeholder="아이디"
+                                       isInvalid
+                                       errorBorderColor={!isId ? 'none' : 'red.300'}
+                                       onChange={onChangeId}
+                                       size='md'
+                                />
+                                <InputRightElement width='4.9rem'>
+                                    <Button size='sm'
+                                            h='1.75rem'
+                                            variant='outline'
+                                            fontSize='12px'
+                                    >
+                                        중복확인
+                                    </Button>
+                                </InputRightElement>
+                            </InputGroup>
+                            <Text fontSize='10px'>{idMessage}</Text>
+
+                            <InputGroup>
+                                <Input type={showPasswordText ? 'text' : "password"}
+                                       placeholder="비밀번호"
+                                       isInvalid
+                                       errorBorderColor={!isPassword ? 'none' : 'red.300'}
+                                       onChange={onChangePassword}/>
+
+                                <InputRightElement width='3rem'>
+                                    <IconButton h='1.75rem'
+                                                icon={showPasswordText ? <FaRegEyeSlash/> : <FaRegEye/>}
+                                                onClick={() => setShowPasswordText(!showPasswordText)}/>
+                                </InputRightElement>
+                            </InputGroup>
+                            <Text fontSize='10px'>{passwordMessage}</Text>
+
+                            <Input type="password"
+                                   placeholder="비밀번호 확인"
+                                   isInvalid
+                                   errorBorderColor={!isPasswordCheck ? 'none' : 'red.300'}
+                                   onChange={onChangePasswordCheck}/>
+                            <Text fontSize='10px'>{passwordCheckMessage}</Text>
+                        </Stack>
+                        <Flex justifyContent='center' mt={10} mb={10}>
+                            <Button onClick={onSubmit} width='300px'>회원가입</Button>
+                        </Flex>
+                    </div>
                 }
             </Stack>
 
-            <Flex justifyContent='center' mt={10} mb={10}>
-                <Button onClick={onSubmit} width='300px'>회원가입</Button>
-            </Flex>
+
         </div>
     );
 }
