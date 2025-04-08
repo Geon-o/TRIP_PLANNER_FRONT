@@ -1,7 +1,10 @@
-import {useCallback, useEffect, useRef, useState} from 'react';
+/**
+ * 회원가입 페이지
+ */
+
+import {useCallback, useRef, useState} from 'react';
 import styles from './index.module.scss';
-import {FaRegEye} from "react-icons/fa";
-import {FaRegEyeSlash} from "react-icons/fa";
+import {FaRegEye, FaRegEyeSlash} from "react-icons/fa";
 import {
     Input,
     InputGroup,
@@ -12,9 +15,11 @@ import {
     InputRightElement,
     IconButton
 } from '@chakra-ui/react';
-import {UserDto} from './types/User.tsx';
 import * as React from "react";
 import Timer from "@pages/user/sign_up/utils/Timer.tsx";
+import {UserDto} from './types/User.tsx';
+import {EmailAuthInfo} from "@pages/user/sign_up/types/EmailAuthInfo.tsx";
+import API from "@pages/user/sign_up/utils/Api.ts";
 
 const index = () => {
     const [showPasswordText, setShowPasswordText] = useState(false);
@@ -26,18 +31,7 @@ const index = () => {
 
     const resetTimerRef = useRef(null);
 
-    const onSubmit: any = (data: UserDto) => {
-        console.log(data);
-        console.log(value.length);
-    }
-
-    const [value, setValue] = useState('');
-
-    const [id, setId] = useState('');
-    const [email, setEmail] = useState('');
-    const [emailConf, setEmailConf] = useState('');
     const [password, setPassword] = useState('');
-    const [passwordCheck, setPasswordCheck] = useState('');
 
     const [idMessage, setIdMessage] = useState('');
     const [emailMessage, setEmailMessage] = useState('');
@@ -51,9 +45,20 @@ const index = () => {
     const [isPassword, setIsPassword] = useState(false);
     const [isPasswordCheck, setIsPasswordCheck] = useState(false);
 
-    const onChangeId = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        setId(e.target.value);
+    /**
+     * 이메일 인증 관련 데이터
+     *
+     * @param
+     * - email: 이메일 주소
+     * - deadlineTime: 인증 시간
+     */
+    const [emailAuthInfo, setEmailAuthInfo] = useState<EmailAuthInfo>({
+        email: '',
+        deadlineTime: 0
+    });
 
+    /***************************** 회원가입 정보 유효성 검사 *****************************/
+    const onChangeId = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.value.length < 2 || e.target.value.length > 8) {
             setIdMessage('2글자 이상 8글자 미만으로 입력해주세요.');
             setIsId(true);
@@ -65,7 +70,10 @@ const index = () => {
 
     const onChangeEmail = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const emailRegex = /([\w-.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([\w-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/;
-        setEmail(e.target.value);
+        setEmailAuthInfo({
+            email: e.target.value,
+            deadlineTime: 5
+        });
 
         if (!emailRegex.test(e.target.value)) {
             setEmailMessage('올바른 이메일 주소를 입력해주세요.');
@@ -79,8 +87,6 @@ const index = () => {
     }, []);
 
     const onChangeEmailConf = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        setEmailConf(e.target.value);
-
         if (e.target.value.length > 6) {
             setEmailConfMessage('인증 번호를 확인해주세요');
             setDisabledDetailInfoBtn(true);
@@ -118,8 +124,6 @@ const index = () => {
     }, []);
 
     const onChangePasswordCheck = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        setPasswordCheck(e.target.value);
-
         if (password === e.target.value) {
             setPasswordCheckMessage('');
             setIsPasswordCheck(false);
@@ -129,17 +133,36 @@ const index = () => {
         }
 
     }, [password]);
+    /*****************************END*****************************/
 
-    const onClickEmailConf = () => {
-        setShowEmailConf(!isEmail);
-        handleReset();
+    /**
+     * 회원가입 처리
+     * @param data
+     */
+    const onSubmit: any = (data: UserDto) => {
+        console.log(data);
     }
 
-
+    const onClickEmailConf = () => {
+        apiEmailAuth()
+            .then(r => setShowEmailConf(!isEmail))
+            .catch(e => console.log(e.message));
+        // handleReset();
+    }
     const handleReset = () => {
         if (resetTimerRef.current) {
             resetTimerRef.current();
         }
+    }
+
+    const apiEmailAuth = async () => {
+        console.log(emailAuthInfo);
+        const {data} = await API.post(
+            '/emailAuth/sendVerificationNo',
+            JSON.stringify(emailAuthInfo)
+        );
+
+        return data;
     }
 
     return (
@@ -178,7 +201,7 @@ const index = () => {
                             />
                             <InputRightElement width='8.5rem'>
                                 <Text fontSize='10px' h='1rem'>
-                                    <Timer onReset={(resetFn) => (resetTimerRef.current = resetFn)} />
+                                    <Timer onReset={(resetFn) => (resetTimerRef.current = resetFn)}/>
                                 </Text>
                             </InputRightElement>
                             <InputRightElement width='3.5rem'>
