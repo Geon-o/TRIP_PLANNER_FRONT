@@ -17,9 +17,16 @@ import {
 } from '@chakra-ui/react';
 import * as React from "react";
 import Timer from "@pages/user/sign_up/utils/Timer.tsx";
-import {UserDto} from './types/User.tsx';
 import {EmailAuthInfo} from "@pages/user/sign_up/types/EmailAuthInfo.tsx";
 import API from "@pages/user/sign_up/utils/Api.ts";
+import {AuthTokenInfo} from "@pages/user/sign_up/types/AuthTokenInfo.tsx";
+
+/**
+ * TODO
+ * 1. 전체적인 useState 정리
+ * 2. 회원가입 시 검증로직 정리
+ * 3. 해당 파일엔 최대한 html만 있도록 정리
+ */
 
 const index = () => {
     const [showPasswordText, setShowPasswordText] = useState(false);
@@ -56,6 +63,11 @@ const index = () => {
         email: '',
         deadlineTime: 0
     });
+
+    /**
+     * 이메일로부터 받은 인증번호 데이터
+     */
+    const [token, setToken] = useState('');
 
     /***************************** 회원가입 정보 유효성 검사 *****************************/
     const onChangeId = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,7 +113,7 @@ const index = () => {
 
         setEmailConfMessage('');
         setDisabledDetailInfoBtn(false);
-
+        setToken(e.target.value);
     }, []);
 
     const onChangePassword = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -144,9 +156,16 @@ const index = () => {
     }
 
     const onClickEmailConf = () => {
+        setShowEmailConf(!isEmail);
         apiEmailAuth()
-            .then(r => setShowEmailConf(!isEmail))
-            .catch(e => console.log(e.message));
+            .catch((e) => {
+                /**
+                 * TODO
+                 * 1. 토스트 처리
+                 *  - 메시징: 이메일 인증 실패 이메일을 확인해주세요.
+                 */
+                setShowEmailConf(false);
+            });
         // handleReset();
     }
     const handleReset = () => {
@@ -156,12 +175,34 @@ const index = () => {
     }
 
     const apiEmailAuth = async () => {
-        console.log(emailAuthInfo);
         const {data} = await API.post(
             '/emailAuth/sendVerificationNo',
             JSON.stringify(emailAuthInfo)
         );
 
+        return data;
+    }
+
+    const onClickCheckAuthToken = () => {
+        const authTokenInfo: AuthTokenInfo = {
+            email: emailAuthInfo.email,
+            authToken: token
+        }
+
+        apiAuthToken(authTokenInfo)
+            .then((r) => {
+                setShowDetailInfo(r)
+            })
+            .catch(e => console.log(e.message));
+    }
+
+    const apiAuthToken = async (authTokenInfo: AuthTokenInfo) => {
+        console.log(authTokenInfo);
+
+        const {data} = await API.post(
+            '/emailAuth/checkVerificationNo',
+            JSON.stringify(authTokenInfo)
+        );
         return data;
     }
 
@@ -211,6 +252,7 @@ const index = () => {
                                         fontSize='12px'
                                         disabled={disabledDetailInfoBtn}
                                         onClick={() => setShowDetailInfo(true)}
+                                        onClick={onClickCheckAuthToken}
                                 >
                                     확인
                                 </Button>
