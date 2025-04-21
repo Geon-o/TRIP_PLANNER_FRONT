@@ -2,20 +2,11 @@
  * 회원가입 페이지
  */
 
+import * as React from 'react';
 import {useCallback, useRef, useState} from 'react';
 import styles from './index.module.scss';
 import {FaRegEye, FaRegEyeSlash} from "react-icons/fa";
-import {
-    Input,
-    InputGroup,
-    Button,
-    Flex,
-    Stack,
-    Text,
-    InputRightElement,
-    IconButton
-} from '@chakra-ui/react';
-import * as React from "react";
+import {Button, Flex, IconButton, Input, InputGroup, InputRightElement, Stack, Text} from '@chakra-ui/react';
 import Timer from "@pages/user/sign_up/utils/Timer.tsx";
 import {EmailAuthInfo} from "@pages/user/sign_up/types/EmailAuthInfo.tsx";
 import API from "@pages/user/sign_up/utils/Api.ts";
@@ -35,17 +26,25 @@ const index = () => {
 
     const [disabledEmailConfBtn, setDisabledEmailConfBtn] = useState(true);
     const [disabledDetailInfoBtn, setDisabledDetailInfoBtn] = useState(true);
+    const [disabledEmailAuthForm, setDisabledEmailAuthForm] = useState(false);
+    const [isCheckDuplicatedIdForm, setIsCheckDuplicatedIdForm] = useState(false);
 
+    //이메일 인증버튼명
+    const [emailTokenAuthBtnName, setEmailTokenAuthBtnName] = useState('인증');
+
+    //Timer로 부터 전달받은 현재 시간리셋
     const resetTimerRef = useRef(null);
 
     const [password, setPassword] = useState('');
 
+    // 입력폼 error 메시지
     const [idMessage, setIdMessage] = useState('');
     const [emailMessage, setEmailMessage] = useState('');
     const [emailConfMessage, setEmailConfMessage] = useState('');
     const [passwordMessage, setPasswordMessage] = useState('');
     const [passwordCheckMessage, setPasswordCheckMessage] = useState('');
 
+    // 입력폼 유효값에 따른 폼색상변
     const [isId, setIsId] = useState(false);
     const [isEmail, setIsEmail] = useState(false);
     const [isEmailConf, setIsEmailConf] = useState(false);
@@ -68,16 +67,19 @@ const index = () => {
      * 이메일로부터 받은 인증번호 데이터
      */
     const [token, setToken] = useState('');
+    const [userId, setUserId] = useState('');
 
     /***************************** 회원가입 정보 유효성 검사 *****************************/
     const onChangeId = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.value.length < 2 || e.target.value.length > 8) {
             setIdMessage('2글자 이상 8글자 미만으로 입력해주세요.');
             setIsId(true);
-        } else {
-            setIdMessage('');
-            setIsId(false);
+            return;
         }
+
+        setIdMessage('');
+        setIsId(false);
+        setUserId(e.target.value);
     }, []);
 
     const onChangeEmail = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,12 +109,14 @@ const index = () => {
 
         if (e.target.value.length === 0) {
             setEmailConfMessage('인증번호를 입력해주세요.');
+            setIsEmailConf(true);
             setDisabledDetailInfoBtn(true);
             return;
         }
 
         setEmailConfMessage('');
         setDisabledDetailInfoBtn(false);
+        setIsEmailConf(false);
         setToken(e.target.value);
     }, []);
 
@@ -151,12 +155,22 @@ const index = () => {
      * 회원가입 처리
      * @param data
      */
-    const onSubmit: any = (data: UserDto) => {
-        console.log(data);
-    }
+    // const onSubmit: any = (data: UserDto) => {
+    //     console.log(data);
+    // }
 
+
+    /**
+     * 이메일 확인 로직 (api)
+     */
     const onClickEmailConf = () => {
-        setShowEmailConf(!isEmail);
+        if (emailTokenAuthBtnName.includes('재인증')) handleReset();
+
+        if (!isEmail) {
+            setShowEmailConf(!isEmail);
+            setEmailTokenAuthBtnName("재인증");
+        }
+
         apiEmailAuth()
             .catch((e) => {
                 /**
@@ -166,8 +180,11 @@ const index = () => {
                  */
                 setShowEmailConf(false);
             });
-        // handleReset();
     }
+
+    /**
+     * 이메일 재전송시 인증 타이머 리셋
+     */
     const handleReset = () => {
         if (resetTimerRef.current) {
             resetTimerRef.current();
@@ -176,13 +193,18 @@ const index = () => {
 
     const apiEmailAuth = async () => {
         const {data} = await API.post(
-            '/emailAuth/sendVerificationNo',
+            '/member/emailAuth/sendVerificationNo',
             JSON.stringify(emailAuthInfo)
         );
 
         return data;
     }
+    /** 여기까지 **/
 
+
+    /**
+     * 인증번호 제크 로직 (api)
+     */
     const onClickCheckAuthToken = () => {
         const authTokenInfo: AuthTokenInfo = {
             email: emailAuthInfo.email,
@@ -191,20 +213,47 @@ const index = () => {
 
         apiAuthToken(authTokenInfo)
             .then((r) => {
-                setShowDetailInfo(r)
+                setShowDetailInfo(r);
+                setDisabledEmailAuthForm(true);
             })
             .catch(e => console.log(e.message));
     }
 
+    // api 전송
     const apiAuthToken = async (authTokenInfo: AuthTokenInfo) => {
         console.log(authTokenInfo);
 
         const {data} = await API.post(
-            '/emailAuth/checkVerificationNo',
+            '/member/emailAuth/checkVerificationNo',
             JSON.stringify(authTokenInfo)
         );
         return data;
     }
+    /** 여기까지 **/
+
+    const checkDuplicateId = () => {
+        console.log(userId);
+        apiCheckDuplicateId()
+            .then((r) => {
+                if (r) {
+                    setIdMessage('사용가능한 아이디입니다.');
+                    setIsCheckDuplicatedIdForm(r);
+
+                } else {
+                    setIsId(!r);
+                    setIdMessage('이미 사용중인 아이디입니다.');
+                    setIsCheckDuplicatedIdForm(r);
+                }
+            });
+    }
+
+    const apiCheckDuplicateId = async () => {
+        const {data} = await API.get(
+            `/member/checkDuplicateUserId/${userId}`,
+        );
+        return data;
+    }
+
 
     return (
         <div className={styles.container}>
@@ -214,6 +263,7 @@ const index = () => {
                     <Input type="email"
                            placeholder="이메일"
                            isInvalid
+                           disabled={disabledEmailAuthForm}
                            errorBorderColor={!isEmail ? 'none' : 'red.300'}
                            onChange={onChangeEmail}/>
                     <InputRightElement width={showEmailConf ? '4.2rem' : '3.5rem'}>
@@ -222,9 +272,10 @@ const index = () => {
                                 variant='outline'
                                 fontSize='12px'
                                 onClick={onClickEmailConf}
-                                disabled={disabledEmailConfBtn}
+                                disabled={disabledEmailConfBtn || disabledEmailAuthForm}
+                                name="emailConfBtn"
                         >
-                            {showEmailConf ? '재인증' : '인증'}
+                            {emailTokenAuthBtnName}
                         </Button>
                     </InputRightElement>
                 </InputGroup>
@@ -239,10 +290,12 @@ const index = () => {
                                    isInvalid
                                    errorBorderColor={!isEmailConf ? 'none' : 'red.300'}
                                    onChange={onChangeEmailConf}
+                                   disabled={disabledEmailAuthForm}
                             />
                             <InputRightElement width='8.5rem'>
                                 <Text fontSize='10px' h='1rem'>
-                                    <Timer onReset={(resetFn) => (resetTimerRef.current = resetFn)}/>
+                                    <Timer onReset={(resetFn) => (resetTimerRef.current = resetFn)}
+                                           disabled={disabledEmailAuthForm}/>
                                 </Text>
                             </InputRightElement>
                             <InputRightElement width='3.5rem'>
@@ -250,8 +303,7 @@ const index = () => {
                                         h='1.75rem'
                                         variant='outline'
                                         fontSize='12px'
-                                        disabled={disabledDetailInfoBtn}
-                                        onClick={() => setShowDetailInfo(true)}
+                                        disabled={disabledDetailInfoBtn || disabledEmailAuthForm}
                                         onClick={onClickCheckAuthToken}
                                 >
                                     확인
@@ -279,6 +331,7 @@ const index = () => {
                                             h='1.75rem'
                                             variant='outline'
                                             fontSize='12px'
+                                            onClick={checkDuplicateId}
                                     >
                                         중복확인
                                     </Button>
@@ -309,7 +362,7 @@ const index = () => {
                             <Text fontSize='10px'>{passwordCheckMessage}</Text>
                         </Stack>
                         <Flex justifyContent='center' mt={10} mb={10}>
-                            <Button onClick={onSubmit} width='300px'>회원가입</Button>
+                            <Button width='300px'>회원가입</Button>
                         </Flex>
                     </div>
                 }
