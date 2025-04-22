@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 
-const Timer = ({onReset}) => {
+const Timer = ({onReset, disabled}) => {
     const MINUTES_IN_MS = 5 * 60 * 1000;
     const INTERVAL = 1000;
     const [timeLeft, setTimeLeft] = useState(MINUTES_IN_MS);
@@ -26,9 +26,16 @@ const Timer = ({onReset}) => {
         }
     }, [onReset]);
 
+    useEffect(() => {
+
+        if (disabled) {
+            setTimeLeft(0); // Reset time left if disabled is true
+        }
+    }, [disabled]);
+
     return (
         <>
-            {minutes}:{second}
+            {!disabled ? `${minutes}:${second}` : ''}
         </>
     );
 };
