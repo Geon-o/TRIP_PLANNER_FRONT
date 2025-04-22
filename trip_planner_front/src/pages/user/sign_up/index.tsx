@@ -11,6 +11,8 @@ import Timer from "@pages/user/sign_up/utils/Timer.tsx";
 import {EmailAuthInfo} from "@pages/user/sign_up/types/EmailAuthInfo.tsx";
 import API from "@pages/user/sign_up/utils/Api.ts";
 import {AuthTokenInfo} from "@pages/user/sign_up/types/AuthTokenInfo.tsx";
+import {UserDto} from "@pages/user/sign_up/types/User.tsx";
+import {useNavigate} from "react-router-dom";
 
 /**
  * TODO
@@ -68,6 +70,8 @@ const index = () => {
      */
     const [token, setToken] = useState('');
     const [userId, setUserId] = useState('');
+    const navigate = useNavigate();
+
 
     /***************************** 회원가입 정보 유효성 검사 *****************************/
     const onChangeId = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -254,6 +258,27 @@ const index = () => {
         return data;
     }
 
+    const signUp = () => {
+        const userDto: UserDto = {
+            email: emailAuthInfo.email,
+            userId: userId,
+            password: password,
+        }
+
+        apiSignUp(userDto)
+            .then((r) => {
+                navigate("/");
+            });
+    }
+
+    const apiSignUp = async (userDto: UserDto) => {
+        const {data} = await API.post(
+            '/member/signUp',
+            JSON.stringify(userDto)
+        );
+        return data;
+    }
+
 
     return (
         <div className={styles.container}>
@@ -362,7 +387,11 @@ const index = () => {
                             <Text fontSize='10px'>{passwordCheckMessage}</Text>
                         </Stack>
                         <Flex justifyContent='center' mt={10} mb={10}>
-                            <Button width='300px'>회원가입</Button>
+                            <Button width='300px'
+                                    onClick={signUp}
+                            >
+                                회원가입
+                            </Button>
                         </Flex>
                     </div>
                 }
