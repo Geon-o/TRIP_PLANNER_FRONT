@@ -217,8 +217,17 @@ const index = () => {
 
         apiAuthToken(authTokenInfo)
             .then((r) => {
-                setShowDetailInfo(r);
-                setDisabledEmailAuthForm(true);
+
+                if (r) {
+                    setShowDetailInfo(r);
+                    setDisabledEmailAuthForm(true);
+                    setIsEmailConf(false);
+                    setEmailConfMessage('');
+                    return;
+                }
+
+                setEmailConfMessage('인증번호를 확인해주세요.');
+                setIsEmailConf(true);
             })
             .catch(e => console.log(e.message));
     }
