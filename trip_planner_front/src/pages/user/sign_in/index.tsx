@@ -11,7 +11,7 @@ const Index = () => {
     return (
         <div className={styles.container}>
             <h2 className={styles.container__title}>
-                로그인
+                테스트
             </h2>
             <Stack width={"100%"}>
                 <InputGroup>
