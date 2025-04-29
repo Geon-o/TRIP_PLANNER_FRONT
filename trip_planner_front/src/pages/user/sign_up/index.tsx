@@ -267,7 +267,7 @@ const index = () => {
 
         apiSignUp(userDto)
             .then((r) => {
-                navigate("/");
+                navigate("/signIn");
             });
     }
 
