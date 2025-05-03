@@ -3,7 +3,7 @@
  */
 
 import * as React from 'react';
-import {useCallback, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import styles from './index.module.scss';
 import {FaRegEye, FaRegEyeSlash} from "react-icons/fa";
 import {Button, Flex, IconButton, Input, InputGroup, InputRightElement, Stack, Text} from '@chakra-ui/react';
@@ -53,6 +53,12 @@ const index = () => {
     const [isPassword, setIsPassword] = useState(false);
     const [isPasswordCheck, setIsPasswordCheck] = useState(false);
 
+
+    // 유효성 검증
+    const [validId, setValidId] = useState(true);
+    const [validPassword, setValidPassword] = useState(true);
+    const [validPasswordCheck, setValidPasswordCheck] = useState(true);
+
     /**
      * 이메일 인증 관련 데이터
      *
@@ -83,6 +89,7 @@ const index = () => {
 
         setIdMessage('');
         setIsId(false);
+        setValidId(false);
         setUserId(e.target.value);
     }, []);
 
@@ -139,6 +146,7 @@ const index = () => {
         } else {
             setPasswordMessage('');
             setIsPassword(false);
+            setValidPassword(false);
         }
 
     }, []);
@@ -147,6 +155,7 @@ const index = () => {
         if (password === e.target.value) {
             setPasswordCheckMessage('');
             setIsPasswordCheck(false);
+            setValidPasswordCheck(false);
         } else {
             setPasswordCheckMessage('비밀번호가 일치하지 않습니다 :(');
             setIsPasswordCheck(true);
@@ -154,15 +163,6 @@ const index = () => {
 
     }, [password]);
     /*****************************END*****************************/
-
-    /**
-     * 회원가입 처리
-     * @param data
-     */
-    // const onSubmit: any = (data: UserDto) => {
-    //     console.log(data);
-    // }
-
 
     /**
      * 이메일 확인 로직 (api)
@@ -177,6 +177,7 @@ const index = () => {
 
         apiEmailAuth()
             .catch((e) => {
+                alert('이메일 인증 실패');
                 /**
                  * TODO
                  * 1. 토스트 처리
@@ -251,6 +252,7 @@ const index = () => {
                 if (r) {
                     setIdMessage('사용가능한 아이디입니다.');
                     setIsCheckDuplicatedIdForm(r);
+                    setIsId(!r)
 
                 } else {
                     setIsId(!r);
@@ -268,11 +270,15 @@ const index = () => {
     }
 
     const signUp = () => {
+        if (validDate()) {
+            return;
+        }
+
         const userDto: UserDto = {
             email: emailAuthInfo.email,
             userId: userId,
             password: password,
-        }
+        };
 
         apiSignUp(userDto)
             .then((r) => {
@@ -288,6 +294,34 @@ const index = () => {
         return data;
     }
 
+    const validDate = () => {
+        if (validId) {
+            setIsId(true);
+            setIdMessage('아이디를 입력해주세요.');
+        }
+
+        if (validPassword) {
+            setIsPassword(true);
+            setPasswordMessage('비밀번호를 입력해주세요.');
+        }
+
+        if (validPasswordCheck) {
+            setIsPasswordCheck(true);
+            setPasswordCheckMessage('비밀번호를 확인해주세요.');
+        }
+
+        if (validId || validPassword || validPasswordCheck) {
+            return true;
+        }
+
+        if (!isCheckDuplicatedIdForm) {
+            setIsId(true);
+            setIdMessage('아이디 중복확인을 해주세요.');
+            return true;
+        }
+
+        return false;
+    }
 
     return (
         <div className={styles.container}>
