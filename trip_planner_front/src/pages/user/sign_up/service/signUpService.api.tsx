@@ -1,4 +1,4 @@
-import API from "@pages/user/sign_up/utils/Api.ts";
+import API from "@/config/Api.ts";
 import {AuthTokenInfo} from "@pages/user/sign_up/types/AuthTokenInfo.tsx";
 import {UserDto} from "@pages/user/sign_up/types/User.tsx";
 import {EmailAuthInfo} from "@pages/user/sign_up/types/EmailAuthInfo.tsx";

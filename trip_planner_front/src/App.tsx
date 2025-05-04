@@ -1,5 +1,5 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import SignUp from '@pages/user/sign_up/index.tsx'
+import SignUp from '@pages/user/sign_up'
 import SignIn from '@pages/user/sign_in/index.tsx'
 
 const App = () => {
