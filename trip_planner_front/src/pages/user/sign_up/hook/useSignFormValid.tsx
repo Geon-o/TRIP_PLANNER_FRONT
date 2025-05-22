@@ -44,7 +44,6 @@ export const useSignFormValid = () => {
             const emailRegex = /([\w-.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([\w-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/;
             setEmailAuthInfo({
                 email: e.target.value,
-                deadlineTime: 5
             });
 
             if (!emailRegex.test(e.target.value)) {

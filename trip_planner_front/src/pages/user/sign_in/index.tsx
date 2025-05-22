@@ -10,6 +10,7 @@ import useSignInFormStore from "@pages/user/sign_in/store/useSignInFormStore.tsx
 import {apiSignIn} from "@pages/user/sign_in/service/signInService.api.tsx";
 import {useNavigate} from "react-router-dom";
 import loginBackground from '@/assets/trip_background.png';
+import {useAuthStore} from "@pages/user/sign_in/store/useAuthStore.tsx";
 
 const Index = () => {
     const [isShowPassword, setIsShowPassword] = React.useState<boolean>(false);
@@ -52,6 +53,8 @@ const Index = () => {
 
         apiSignIn(data)
             .then((r) => {
+                const token = r.authToken;
+                useAuthStore.getState().setAccessToken(token);
                 navigate('/');
             })
             .catch((e) => {
